@@ -1,73 +1,67 @@
+
 <?php
-$uploadfile = "";
-echo "Uploading ";
-$temperature='';
-echo $_FILES["file"]["caption"];
-if(!empty($_GET['data']))
-{
-    $temperature=$_GET['data'];
 
-echo $temperature;
-if(!empty($temperature))
-{ 
-    $attendance = fopen("action.txt","w") or die("Unable to open file!");
-                            $txt = $temperature;
-                            fwrite($attendance, $txt);
-                            $txt = "";
-                            fwrite($attendance, $txt);
-                            fclose($attendance);
-                             }
-                             else{
-                                echo "no logs";
-                             }
-}
+include 'connect.php';
+header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: PUT, GET, POST");
 
-if(strlen(basename($_FILES["imageFile"]["name"])) > 0)
+
+
+$response = array();
+$upload_dir = 'uploads/';
+$server_url = 'http://app.vrt.rw/"';
+
+if($_FILES['file'])
 {
-         $uploadfile = basename($_FILES["imageFile"]["name"]);
-  if(move_uploaded_file($_FILES["imageFile"]["tmp_name"], $uploadfile))
-         {
-         @chmod($uploadfile,0777); echo " Ok! ";
-        $datum = mktime(date('H')+0, date('i'), date('s'), date('m'), date('d'), date('y'));
-        if (file_exists("upload/".date('Y_m_d', $datum) )) 
+    $avatar_name = $_FILES["imgFileNm"]["data"];
+    $avatar_tmp_name = $_FILES["file"]["tmp_name"];
+    $error = $_FILES["avatar"]["error"];
+
+    if($error > 0){
+        $response = array(
+            "status" => "error",
+            "error" => true,
+            "message" => "Error uploading the file!"
+        );
+    }else 
+    {
+        $random_name = rand(1000,1000000)."-".$avatar_name;
+        $upload_name = $upload_dir.strtolower($random_name);
+        $upload_name = preg_replace('/\s+/', '-', $upload_name);
+    
+        if(move_uploaded_file($avatar_tmp_name , $upload_name)) {
+            $response = array(
+                "status" => "success",
+                "error" => false,
+                "message" => "File uploaded successfully",
+                "url" => $server_url."/".$upload_name
+              );
+        }else
         {
-         print("Directory already exists.\n");
-         } else {
-         mkdir("upload/".date('Y_m_d', $datum));
-         copy("index1.php","upload/".date('Y_m_d', $datum)."/index.php");
-         print("Directory creating.\n");
-         }
-        echo "saved ";
-        copy($uploadfile,"upload/".date('Y_m_d', $datum)."/".date('Y.m.d_H-i-s', $datum).".jpg");
- }}
-
-include ("../../../src/common/DBConnection.php");
-// $conn=new DBConnection();
-
-// $camera=$conn->execute("INSERT INTO `entrance`(temperature,image) VALUE('".$temperature."','".date('Y.m.d_H-i-s', $datum)."')");
-// if($camera)
-// {
-// echo "Successifull";
-// }
-// else
-// {
-// echo "Failed";
-// }
-
-// $sel="SELECT * FROM entrance order by sid desc";
-// $qry=mysqli_query($conn1,$sel);
-// if($row=mysqli_fetch_array($qry)){
-//     $id=$row['sid'];
-
-    $upd="INSERT INTO entrance (image) VALUES('".date('Y.m.d_H-i-s', $datum)."')";
-    $upqry=mysqli_query($conn1,$upd);
-    if ($upqry) {
-        echo "image added";
-    }else{
-        echo "image not added";
+            $response = array(
+                "status" => "error",
+                "error" => true,
+                "message" => "Error uploading the file!"
+            );
+        }
     }
 
 
-// }else{
-//     echo "data not found";
-// }
+
+    
+
+}else{
+    $response = array(
+        "status" => "error",
+        "error" => true,
+        "message" => "No file was sent!"
+    );
+}
+
+$insert="INSERT INTO entrance(image) values('$random_name')";
+mysqli_query($conn1,$insert);
+
+
+echo json_encode($response);
+?>
