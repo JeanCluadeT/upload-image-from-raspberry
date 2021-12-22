@@ -3,8 +3,7 @@ import picamera
 import os
 import os.path
 import time
-from datetime
-import datetime
+from datetime import datetime
 
 # ----------------------- globals variables-----------------------
 
